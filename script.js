@@ -1,11 +1,13 @@
 const DATA_URL = "./data/copies.json";
 const STORAGE_KEY = "copy-library-v1";
+const ADMIN_KEY = "copy-library-admin";
 
 const state = {
   entries: [],
   activeCategory: "全部",
   search: "",
   detailId: null,
+  adminMode: false,
 };
 
 const els = {
@@ -25,9 +27,7 @@ const els = {
   themeInput: document.querySelector("#themeInput"),
   categoryInput: document.querySelector("#categoryInput"),
   videoUrlInput: document.querySelector("#videoUrlInput"),
-  openingInput: document.querySelector("#openingInput"),
   bodyInput: document.querySelector("#bodyInput"),
-  endingHookInput: document.querySelector("#endingHookInput"),
   tagsInput: document.querySelector("#tagsInput"),
 };
 
@@ -37,9 +37,7 @@ function normalizeEntry(entry) {
     category: entry.category || "未分类",
     theme: entry.theme || "未命名主题",
     videoUrl: entry.videoUrl || "",
-    opening: entry.opening || "",
     body: entry.body || "",
-    endingHook: entry.endingHook || "",
     tags: Array.isArray(entry.tags)
       ? entry.tags
       : String(entry.tags || "")
@@ -131,9 +129,7 @@ function filteredEntries() {
       const haystack = [
         entry.theme,
         entry.category,
-        entry.opening,
         entry.body,
-        entry.endingHook,
         entry.tags.join(" "),
       ]
         .join(" ")
@@ -164,17 +160,17 @@ function renderCard(entry) {
         <div class="meta">
           <span class="category-chip">${escapeHtml(entry.category)}</span>
           <span>${formatDate(entry.updatedAt)}</span>
-          ${entry.videoUrl ? `<a class="detail-link" href="${escapeAttr(entry.videoUrl)}" target="_blank" rel="noreferrer">视频链接</a>` : ""}
+          ${renderVideoLink(entry.videoUrl, "视频链接")}
         </div>
       </div>
       <div class="card-actions">
         <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="title" type="button">复制标题</button>
+        <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="body" type="button">复制文案</button>
         <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="full" type="button">复制全文</button>
         <button class="copy-button" data-open-id="${escapeAttr(entry.id)}" type="button">永久链接</button>
-        <button class="copy-button danger-button" data-delete-id="${escapeAttr(entry.id)}" type="button">删除</button>
+        ${state.adminMode ? `<button class="copy-button danger-button" data-delete-id="${escapeAttr(entry.id)}" type="button">删除</button>` : ""}
       </div>
     </div>
-    ${entry.opening ? `<p class="body-preview"><strong>开头：</strong>${escapeHtml(entry.opening)}</p>` : ""}
     <p class="body-preview">${escapeHtml(entry.body)}</p>
     ${renderTags(entry.tags)}
   </article>`;
@@ -203,17 +199,34 @@ function renderDetail() {
     </div>
     <div class="detail-actions">
       <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="title" type="button">复制标题</button>
+      <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="body" type="button">复制文案</button>
       <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="full" type="button">复制全文</button>
-      <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="opening" type="button">复制开头</button>
-      <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="ending" type="button">复制结尾</button>
-      <button class="copy-button danger-button" data-delete-id="${escapeAttr(entry.id)}" type="button">删除</button>
+      ${state.adminMode ? `<button class="copy-button danger-button" data-delete-id="${escapeAttr(entry.id)}" type="button">删除</button>` : ""}
     </div>
   </div>
-  ${entry.videoUrl ? `<div class="detail-section"><h4>视频链接</h4><a class="detail-link" href="${escapeAttr(entry.videoUrl)}" target="_blank" rel="noreferrer">${escapeHtml(entry.videoUrl)}</a></div>` : ""}
-  ${entry.opening ? `<div class="detail-section"><h4>开头</h4><p class="copy-block">${escapeHtml(entry.opening)}</p></div>` : ""}
+  ${renderVideoDetail(entry.videoUrl)}
   <div class="detail-section"><h4>文案</h4><p class="copy-block">${escapeHtml(entry.body)}</p></div>
-  ${entry.endingHook ? `<div class="detail-section"><h4>结尾钩子</h4><p class="copy-block">${escapeHtml(entry.endingHook)}</p></div>` : ""}
   ${renderTags(entry.tags)}`;
+}
+
+function renderVideoLink(value, label) {
+  const url = extractUrl(value);
+  if (!value) return "";
+  if (!url) return `<span>${escapeHtml(label)}</span>`;
+  return `<a class="detail-link" href="${escapeAttr(url)}" target="_blank" rel="noreferrer">${escapeHtml(label)}</a>`;
+}
+
+function renderVideoDetail(value) {
+  if (!value) return "";
+  const url = extractUrl(value);
+  const content = url
+    ? `<a class="detail-link" href="${escapeAttr(url)}" target="_blank" rel="noreferrer">${escapeHtml(value)}</a>`
+    : `<p class="copy-block">${escapeHtml(value)}</p>`;
+  return `<div class="detail-section"><h4>视频链接</h4>${content}</div>`;
+}
+
+function extractUrl(value) {
+  return String(value || "").match(/https?:\/\/[^\s，。；、]+/)?.[0] || "";
 }
 
 function renderTags(tags) {
@@ -226,11 +239,10 @@ function parseRawText(raw) {
     ["theme", ["主题", "标题"]],
     ["category", ["分类", "目录"]],
     ["videoUrl", ["视频链接", "链接", "原视频"]],
-    ["opening", ["开头", "爆款开头"]],
     ["body", ["文案", "正文", "内容"]],
-    ["endingHook", ["结尾钩子", "结尾", "钩子"]],
     ["tags", ["标签", "关键词"]],
   ];
+  const ignoredLabels = new Set(["开头", "爆款开头", "结尾钩子", "结尾", "钩子"]);
 
   const result = {};
   const lines = raw.replace(/\r\n/g, "\n").split("\n");
@@ -239,6 +251,10 @@ function parseRawText(raw) {
 
   lines.forEach((line) => {
     const match = line.match(/^([^：:]{1,12})[：:]\s*(.*)$/);
+    if (match && ignoredLabels.has(match[1].trim())) {
+      currentKey = null;
+      return;
+    }
     const matched = match && labels.find(([, names]) => names.includes(match[1].trim()));
     if (matched) {
       currentKey = matched[0];
@@ -266,22 +282,17 @@ function fillForm(parsed) {
   els.themeInput.value = parsed.theme || els.themeInput.value;
   els.categoryInput.value = parsed.category || els.categoryInput.value || "未分类";
   els.videoUrlInput.value = parsed.videoUrl || els.videoUrlInput.value;
-  els.openingInput.value = parsed.opening || els.openingInput.value;
   els.bodyInput.value = parsed.body || els.bodyInput.value;
-  els.endingHookInput.value = parsed.endingHook || els.endingHookInput.value;
   els.tagsInput.value = parsed.tags || els.tagsInput.value;
 }
 
 function entryToText(entry, type = "full") {
   if (type === "title") return entry.theme || "";
-  if (type === "opening") return entry.opening || "";
-  if (type === "ending") return entry.endingHook || "";
+  if (type === "body") return entry.body || "";
   return [
     `主题：${entry.theme}`,
     entry.videoUrl ? `视频链接：${entry.videoUrl}` : "",
-    entry.opening ? `开头：${entry.opening}` : "",
     `文案：${entry.body}`,
-    entry.endingHook ? `结尾钩子：${entry.endingHook}` : "",
     entry.tags.length ? `标签：${entry.tags.join("，")}` : "",
   ]
     .filter(Boolean)
@@ -303,6 +314,11 @@ function openPermanentLink(id) {
 }
 
 function deleteEntry(id) {
+  if (!state.adminMode) {
+    showToast("当前不是管理模式");
+    return;
+  }
+
   const entry = state.entries.find((item) => item.id === id);
   if (!entry) return;
 
@@ -411,9 +427,7 @@ els.form.addEventListener("submit", (event) => {
     theme: els.themeInput.value.trim(),
     category: els.categoryInput.value.trim(),
     videoUrl: els.videoUrlInput.value.trim(),
-    opening: els.openingInput.value.trim(),
     body: els.bodyInput.value.trim(),
-    endingHook: els.endingHookInput.value.trim(),
     tags: els.tagsInput.value,
   });
   state.entries.unshift(entry);
@@ -450,6 +464,20 @@ window.addEventListener("hashchange", () => {
   state.detailId = getHashId();
   render();
 });
+
+function initAdminMode() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("admin") === "1") {
+    localStorage.setItem(ADMIN_KEY, "1");
+    params.delete("admin");
+    const query = params.toString();
+    const cleanUrl = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
+    window.history.replaceState(null, "", cleanUrl);
+  }
+  state.adminMode = localStorage.getItem(ADMIN_KEY) === "1";
+}
+
+initAdminMode();
 
 loadEntries()
   .then(() => {
