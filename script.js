@@ -168,6 +168,7 @@ function renderCard(entry) {
         </div>
       </div>
       <div class="card-actions">
+        <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="title" type="button">复制标题</button>
         <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="full" type="button">复制全文</button>
         <button class="copy-button" data-open-id="${escapeAttr(entry.id)}" type="button">永久链接</button>
       </div>
@@ -200,6 +201,7 @@ function renderDetail() {
       </div>
     </div>
     <div class="detail-actions">
+      <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="title" type="button">复制标题</button>
       <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="full" type="button">复制全文</button>
       <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="opening" type="button">复制开头</button>
       <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="ending" type="button">复制结尾</button>
@@ -269,6 +271,7 @@ function fillForm(parsed) {
 }
 
 function entryToText(entry, type = "full") {
+  if (type === "title") return entry.theme || "";
   if (type === "opening") return entry.opening || "";
   if (type === "ending") return entry.endingHook || "";
   return [
