@@ -218,6 +218,15 @@ code {
   color: var(--accent-dark);
 }
 
+.danger-button {
+  color: var(--danger);
+}
+
+.danger-button:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
 .file-button {
   display: grid;
   place-items: center;

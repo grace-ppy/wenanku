@@ -171,6 +171,7 @@ function renderCard(entry) {
         <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="title" type="button">复制标题</button>
         <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="full" type="button">复制全文</button>
         <button class="copy-button" data-open-id="${escapeAttr(entry.id)}" type="button">永久链接</button>
+        <button class="copy-button danger-button" data-delete-id="${escapeAttr(entry.id)}" type="button">删除</button>
       </div>
     </div>
     ${entry.opening ? `<p class="body-preview"><strong>开头：</strong>${escapeHtml(entry.opening)}</p>` : ""}
@@ -205,6 +206,7 @@ function renderDetail() {
       <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="full" type="button">复制全文</button>
       <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="opening" type="button">复制开头</button>
       <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="ending" type="button">复制结尾</button>
+      <button class="copy-button danger-button" data-delete-id="${escapeAttr(entry.id)}" type="button">删除</button>
     </div>
   </div>
   ${entry.videoUrl ? `<div class="detail-section"><h4>视频链接</h4><a class="detail-link" href="${escapeAttr(entry.videoUrl)}" target="_blank" rel="noreferrer">${escapeHtml(entry.videoUrl)}</a></div>` : ""}
@@ -300,6 +302,23 @@ function openPermanentLink(id) {
   document.querySelector("#entryDetail")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function deleteEntry(id) {
+  const entry = state.entries.find((item) => item.id === id);
+  if (!entry) return;
+
+  const confirmed = window.confirm(`确定删除「${entry.theme}」吗？`);
+  if (!confirmed) return;
+
+  state.entries = state.entries.filter((item) => item.id !== id);
+  if (state.detailId === id) {
+    state.detailId = null;
+    window.history.replaceState(null, "", window.location.pathname);
+  }
+  saveLocal();
+  render();
+  showToast("已删除");
+}
+
 function getHashId() {
   const match = window.location.hash.match(/#\/copy\/(.+)$/);
   return match ? decodeURIComponent(match[1]) : null;
@@ -376,6 +395,12 @@ document.body.addEventListener("click", (event) => {
   const openButton = event.target.closest("[data-open-id]");
   if (openButton) {
     openPermanentLink(openButton.dataset.openId);
+    return;
+  }
+
+  const deleteButton = event.target.closest("[data-delete-id]");
+  if (deleteButton) {
+    deleteEntry(deleteButton.dataset.deleteId);
   }
 });
 
