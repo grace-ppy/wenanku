@@ -8,6 +8,7 @@ const state = {
   search: "",
   detailId: null,
   adminMode: false,
+  editingId: null,
 };
 
 const els = {
@@ -23,6 +24,8 @@ const els = {
   searchInput: document.querySelector("#searchInput"),
   toast: document.querySelector("#toast"),
   form: document.querySelector("#entryForm"),
+  panelTitle: document.querySelector("#panelTitle"),
+  submitButton: document.querySelector("#submitButton"),
   rawTextInput: document.querySelector("#rawTextInput"),
   themeInput: document.querySelector("#themeInput"),
   categoryInput: document.querySelector("#categoryInput"),
@@ -168,7 +171,7 @@ function renderCard(entry) {
         <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="body" type="button">复制文案</button>
         <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="full" type="button">复制全文</button>
         <button class="copy-button" data-open-id="${escapeAttr(entry.id)}" type="button">永久链接</button>
-        ${state.adminMode ? `<button class="copy-button danger-button" data-delete-id="${escapeAttr(entry.id)}" type="button">删除</button>` : ""}
+        ${state.adminMode ? `<button class="copy-button" data-edit-id="${escapeAttr(entry.id)}" type="button">编辑</button><button class="copy-button danger-button" data-delete-id="${escapeAttr(entry.id)}" type="button">删除</button>` : ""}
       </div>
     </div>
     <p class="body-preview">${escapeHtml(entry.body)}</p>
@@ -201,7 +204,7 @@ function renderDetail() {
       <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="title" type="button">复制标题</button>
       <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="body" type="button">复制文案</button>
       <button class="copy-button" data-copy-id="${escapeAttr(entry.id)}" data-copy-type="full" type="button">复制全文</button>
-      ${state.adminMode ? `<button class="copy-button danger-button" data-delete-id="${escapeAttr(entry.id)}" type="button">删除</button>` : ""}
+      ${state.adminMode ? `<button class="copy-button" data-edit-id="${escapeAttr(entry.id)}" type="button">编辑</button><button class="copy-button danger-button" data-delete-id="${escapeAttr(entry.id)}" type="button">删除</button>` : ""}
     </div>
   </div>
   ${renderVideoDetail(entry.videoUrl)}
@@ -335,6 +338,48 @@ function deleteEntry(id) {
   showToast("已删除");
 }
 
+function openCreatePanel() {
+  state.editingId = null;
+  els.panelTitle.textContent = "粘贴完整文本，自动拆解";
+  els.submitButton.textContent = "保存文案";
+  els.form.reset();
+  els.rawTextInput.value = "";
+  els.entryPanel.hidden = false;
+  els.rawTextInput.focus();
+}
+
+function openEditPanel(id) {
+  if (!state.adminMode) {
+    showToast("当前不是管理模式");
+    return;
+  }
+
+  const entry = state.entries.find((item) => item.id === id);
+  if (!entry) return;
+
+  state.editingId = id;
+  els.panelTitle.textContent = "编辑文案";
+  els.submitButton.textContent = "保存修改";
+  els.rawTextInput.value = "";
+  els.themeInput.value = entry.theme;
+  els.categoryInput.value = entry.category;
+  els.videoUrlInput.value = entry.videoUrl;
+  els.bodyInput.value = entry.body;
+  els.tagsInput.value = entry.tags.join("，");
+  els.entryPanel.hidden = false;
+  els.themeInput.focus();
+  els.entryPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function closeEntryPanel() {
+  state.editingId = null;
+  els.panelTitle.textContent = "粘贴完整文本，自动拆解";
+  els.submitButton.textContent = "保存文案";
+  els.form.reset();
+  els.rawTextInput.value = "";
+  els.entryPanel.hidden = true;
+}
+
 function getHashId() {
   const match = window.location.hash.match(/#\/copy\/(.+)$/);
   return match ? decodeURIComponent(match[1]) : null;
@@ -369,12 +414,11 @@ function escapeAttr(value) {
 }
 
 document.querySelector("#newEntryButton").addEventListener("click", () => {
-  els.entryPanel.hidden = false;
-  els.rawTextInput.focus();
+  openCreatePanel();
 });
 
 document.querySelector("#closePanelButton").addEventListener("click", () => {
-  els.entryPanel.hidden = true;
+  closeEntryPanel();
 });
 
 document.querySelector("#parseButton").addEventListener("click", () => {
@@ -414,6 +458,12 @@ document.body.addEventListener("click", (event) => {
     return;
   }
 
+  const editButton = event.target.closest("[data-edit-id]");
+  if (editButton) {
+    openEditPanel(editButton.dataset.editId);
+    return;
+  }
+
   const deleteButton = event.target.closest("[data-delete-id]");
   if (deleteButton) {
     deleteEntry(deleteButton.dataset.deleteId);
@@ -422,22 +472,36 @@ document.body.addEventListener("click", (event) => {
 
 els.form.addEventListener("submit", (event) => {
   event.preventDefault();
-  const entry = normalizeEntry({
-    id: createId(els.themeInput.value),
+  const wasEditing = Boolean(state.editingId);
+  const draft = normalizeEntry({
+    id: state.editingId || createId(els.themeInput.value),
     theme: els.themeInput.value.trim(),
     category: els.categoryInput.value.trim(),
     videoUrl: els.videoUrlInput.value.trim(),
     body: els.bodyInput.value.trim(),
     tags: els.tagsInput.value,
   });
-  state.entries.unshift(entry);
+
+  if (state.editingId) {
+    const index = state.entries.findIndex((entry) => entry.id === state.editingId);
+    if (index === -1) return;
+    state.entries[index] = {
+      ...state.entries[index],
+      ...draft,
+      id: state.entries[index].id,
+      createdAt: state.entries[index].createdAt,
+      updatedAt: new Date().toISOString(),
+    };
+  } else {
+    state.entries.unshift(draft);
+  }
+
   saveLocal();
-  els.form.reset();
-  els.rawTextInput.value = "";
-  els.entryPanel.hidden = true;
+  const id = draft.id;
+  closeEntryPanel();
   state.activeCategory = "全部";
-  openPermanentLink(entry.id);
-  showToast("已保存到当前浏览器");
+  openPermanentLink(id);
+  showToast(wasEditing ? "已保存修改" : "已保存到当前浏览器");
 });
 
 document.querySelector("#exportButton").addEventListener("click", () => {
