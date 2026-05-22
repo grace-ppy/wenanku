@@ -38,10 +38,31 @@ FEISHU_BITABLE_TABLE_ID
 ALLOWED_ORIGIN
 ```
 
+飞书链接示例：
+
+```text
+https://xxx.feishu.cn/base/bascnAbCdEfGhIjKl?table=tblA1B2C3D4&view=vewxxxx
+```
+
+对应关系：
+
+```text
+FEISHU_BITABLE_APP_TOKEN=bascnAbCdEfGhIjKl
+FEISHU_BITABLE_TABLE_ID=tblA1B2C3D4
+```
+
+`vew...` 是视图 ID，不是数据表 ID。
+
 拿到 Vercel 接口地址后，填写到 `config.js`：
 
 ```js
 window.COPY_LIBRARY_API_URL = "https://你的-vercel-项目.vercel.app/api/copies";
+```
+
+把当前 `data/copies.json` 导入飞书：
+
+```bash
+npm run import:feishu
 ```
 
 ## 本地 JSON 更新内容

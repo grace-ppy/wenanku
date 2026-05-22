@@ -1,5 +1,23 @@
 const FEISHU_TOKEN_URL = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal";
 
+function cleanEnvValue(value) {
+  return String(value || "").trim();
+}
+
+function getBitableConfig() {
+  const appToken = cleanEnvValue(process.env.FEISHU_BITABLE_APP_TOKEN).split(/[?&]/)[0];
+  const tableId = cleanEnvValue(process.env.FEISHU_BITABLE_TABLE_ID).split(/[?&]/)[0];
+
+  if (appToken.startsWith("tbl")) {
+    throw new Error("FEISHU_BITABLE_APP_TOKEN looks like a table id. Use the token after /base/ in the Feishu URL.");
+  }
+  if (tableId.startsWith("vew")) {
+    throw new Error("FEISHU_BITABLE_TABLE_ID looks like a view id. Use the value after table= in the Feishu URL.");
+  }
+
+  return { appToken, tableId };
+}
+
 function json(response, status = 200) {
   response.statusCode = status;
   response.setHeader("content-type", "application/json; charset=utf-8");
@@ -55,8 +73,7 @@ async function getTenantAccessToken() {
 }
 
 async function listRecords(token) {
-  const appToken = process.env.FEISHU_BITABLE_APP_TOKEN;
-  const tableId = process.env.FEISHU_BITABLE_TABLE_ID;
+  const { appToken, tableId } = getBitableConfig();
   const records = [];
   let pageToken = "";
 
