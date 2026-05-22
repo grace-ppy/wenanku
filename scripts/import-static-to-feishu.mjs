@@ -46,8 +46,6 @@ function toFeishuRecord(entry) {
       视频链接: entry.videoUrl || "",
       文案: entry.body || "",
       标签: Array.isArray(entry.tags) ? entry.tags.join("，") : String(entry.tags || ""),
-      是否显示: true,
-      更新时间: Date.now(),
     },
   };
 }
