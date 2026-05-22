@@ -1,6 +1,7 @@
 const DATA_URL = "./data/copies.json";
 const STORAGE_KEY = "copy-library-v1";
 const ADMIN_KEY = "copy-library-admin";
+const API_URL = window.COPY_LIBRARY_API_URL || "";
 
 const state = {
   entries: [],
@@ -53,6 +54,19 @@ function normalizeEntry(entry) {
 }
 
 async function loadEntries() {
+  if (API_URL) {
+    try {
+      const response = await fetch(API_URL, { cache: "no-store" });
+      if (!response.ok) throw new Error(`Remote API failed: ${response.status}`);
+      const data = await response.json();
+      state.entries = data.map(normalizeEntry);
+      return;
+    } catch (error) {
+      console.warn(error);
+      showToast("飞书数据读取失败，已显示本地数据");
+    }
+  }
+
   const local = localStorage.getItem(STORAGE_KEY);
   if (local) {
     state.entries = JSON.parse(local).map(normalizeEntry);

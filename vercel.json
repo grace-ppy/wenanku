@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/copies",
+      "destination": "/api/copies.js"
+    }
+  ]
+}

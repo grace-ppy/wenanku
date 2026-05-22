@@ -1,0 +1,13 @@
+{
+  "name": "wenanku",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "check": "node --check script.js && node --check api/copies.js"
+  },
+  "devDependencies": {
+    "vercel": "^34.0.0"
+  }
+}
