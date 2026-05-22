@@ -92,13 +92,19 @@ function toCopyEntry(record) {
     .split(/[，,]/)
     .map((tag) => tag.trim())
     .filter(Boolean);
+  const body = getTextField(fields, "文案") || getTextField(fields, "备注");
+  const theme =
+    getTextField(fields, "主题") ||
+    getTextField(fields, "素材名称") ||
+    body.split(/\n/)[0].slice(0, 28) ||
+    "未命名主题";
 
   return {
     id: record.record_id,
     category: getTextField(fields, "分类") || "未分类",
-    theme: getTextField(fields, "主题") || getTextField(fields, "素材名称") || "未命名主题",
+    theme,
     videoUrl: getTextField(fields, "视频链接") || getTextField(fields, "素材链接"),
-    body: getTextField(fields, "文案") || getTextField(fields, "备注"),
+    body,
     tags,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
