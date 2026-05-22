@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vercel dev",
-    "check": "node --check script.js && node --check api/copies.js && node --check scripts/import-static-to-feishu.mjs",
-    "import:feishu": "node scripts/import-static-to-feishu.mjs"
+    "check": "node --check script.js && node --check api/copies.js && node --check scripts/import-static-to-feishu.mjs && node --check scripts/sync-feishu-to-static.mjs",
+    "import:feishu": "node scripts/import-static-to-feishu.mjs",
+    "sync:feishu": "node scripts/sync-feishu-to-static.mjs"
   },
   "devDependencies": {
     "vercel": "^34.0.0"

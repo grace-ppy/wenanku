@@ -65,6 +65,18 @@ window.COPY_LIBRARY_API_URL = "https://你的-vercel-项目.vercel.app/api/copie
 npm run import:feishu
 ```
 
+不使用 Vercel 时，可用 GitHub Actions 定时同步飞书到静态 JSON。需要在仓库
+`Settings -> Secrets and variables -> Actions` 添加：
+
+```text
+FEISHU_APP_ID
+FEISHU_APP_SECRET
+FEISHU_BITABLE_APP_TOKEN
+FEISHU_BITABLE_TABLE_ID
+```
+
+然后到 `Actions -> Sync Feishu Data -> Run workflow` 手动同步一次；之后会每小时自动同步。
+
 ## 本地 JSON 更新内容
 
 页面内新增的内容会保存到当前浏览器。需要让线上网站长期展示这些内容时：
