@@ -86,7 +86,7 @@ async function listRecords(token) {
     });
     const data = await response.json();
     if (!response.ok || data.code !== 0) {
-      throw new Error(data.msg || "Failed to list Feishu records");
+      throw new Error(`${data.msg || "Failed to list Feishu records"} (${data.code || response.status})`);
     }
     records.push(...(data.data?.items || []));
     pageToken = data.data?.page_token || "";

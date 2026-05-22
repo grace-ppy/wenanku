@@ -65,7 +65,7 @@ async function batchCreateRecords(token, records) {
   });
   const data = await response.json();
   if (!response.ok || data.code !== 0) {
-    throw new Error(data.msg || "Failed to import records");
+    throw new Error(`${data.msg || "Failed to import records"} (${data.code || response.status})`);
   }
   return data.data?.records || [];
 }
