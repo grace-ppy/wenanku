@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>文案库</title>
+    <meta name="description" content="可分类、可搜索、可复制、带永久链接的极简文案库。" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">文</div>
+          <div>
+            <h1>文案库</h1>
+            <p>分类整理 / 一键复制 / 永久链接</p>
+          </div>
+        </div>
+
+        <button class="primary-action" id="newEntryButton" type="button">新增文案</button>
+
+        <section class="nav-section" aria-labelledby="categoryTitle">
+          <div class="section-head">
+            <h2 id="categoryTitle">目录分类</h2>
+            <button class="text-button" id="resetLocalButton" type="button">重置</button>
+          </div>
+          <nav class="category-list" id="categoryList" aria-label="文案分类"></nav>
+        </section>
+
+        <section class="nav-section compact" aria-labelledby="maintainTitle">
+          <h2 id="maintainTitle">维护方式</h2>
+          <p>在页面内新增会保存到当前浏览器。需要长期同步时，导出 JSON 后替换 <code>data/copies.json</code> 即可。</p>
+          <div class="sidebar-actions">
+            <button class="ghost-button" id="exportButton" type="button">导出 JSON</button>
+            <label class="ghost-button file-button">
+              导入 JSON
+              <input id="importInput" type="file" accept="application/json" />
+            </label>
+          </div>
+        </section>
+      </aside>
+
+      <main class="content">
+        <header class="toolbar">
+          <div>
+            <p class="eyebrow">Copy Library</p>
+            <h2 id="viewTitle">全部文案</h2>
+          </div>
+          <div class="tools">
+            <label class="search">
+              <span>搜索</span>
+              <input id="searchInput" type="search" placeholder="主题、标签、正文..." />
+            </label>
+          </div>
+        </header>
+
+        <section class="stats" aria-label="文案库统计">
+          <div>
+            <strong id="totalCount">0</strong>
+            <span>条文案</span>
+          </div>
+          <div>
+            <strong id="categoryCount">0</strong>
+            <span>个分类</span>
+          </div>
+          <div>
+            <strong id="tagCount">0</strong>
+            <span>个标签</span>
+          </div>
+        </section>
+
+        <section class="entry-panel" id="entryPanel" hidden>
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Quick Add</p>
+              <h3>粘贴完整文本，自动拆解</h3>
+            </div>
+            <button class="icon-button" id="closePanelButton" type="button" aria-label="关闭">×</button>
+          </div>
+
+          <div class="parser-grid">
+            <label class="raw-input">
+              <span>完整文本</span>
+              <textarea id="rawTextInput" placeholder="主题：&#10;视频链接：&#10;开头：&#10;文案：&#10;结尾钩子：&#10;标签："></textarea>
+            </label>
+            <form class="entry-form" id="entryForm">
+              <label>
+                <span>主题</span>
+                <input id="themeInput" name="theme" required />
+              </label>
+              <label>
+                <span>分类</span>
+                <input id="categoryInput" name="category" list="categoryOptions" placeholder="可新建分类" required />
+                <datalist id="categoryOptions"></datalist>
+              </label>
+              <label>
+                <span>视频链接</span>
+                <input id="videoUrlInput" name="videoUrl" type="url" placeholder="https://..." />
+              </label>
+              <label>
+                <span>开头</span>
+                <textarea id="openingInput" name="opening" rows="3"></textarea>
+              </label>
+              <label>
+                <span>文案</span>
+                <textarea id="bodyInput" name="body" rows="6" required></textarea>
+              </label>
+              <label>
+                <span>结尾钩子</span>
+                <textarea id="endingHookInput" name="endingHook" rows="3"></textarea>
+              </label>
+              <label>
+                <span>标签</span>
+                <input id="tagsInput" name="tags" placeholder="用逗号分隔，例如：情绪价值, 口播" />
+              </label>
+              <div class="form-actions">
+                <button class="ghost-button" id="parseButton" type="button">自动拆解</button>
+                <button class="primary-action" type="submit">保存文案</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <section class="entry-detail" id="entryDetail" hidden></section>
+        <section class="entry-list" id="entryList" aria-live="polite"></section>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./script.js" type="module"></script>
+  </body>
+</html>
