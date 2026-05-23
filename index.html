@@ -18,7 +18,7 @@
           </div>
         </div>
 
-        <button class="primary-action" id="newEntryButton" type="button">新增文案</button>
+        <button class="primary-action" id="newEntryButton" type="button" data-admin-only>新增文案</button>
 
         <section class="nav-section" aria-labelledby="categoryTitle">
           <div class="section-head">
@@ -28,7 +28,7 @@
           <nav class="category-list" id="categoryList" aria-label="文案分类"></nav>
         </section>
 
-        <section class="nav-section compact" aria-labelledby="maintainTitle">
+        <section class="nav-section compact" aria-labelledby="maintainTitle" data-admin-only>
           <h2 id="maintainTitle">维护方式</h2>
           <p>在页面内新增会保存到当前浏览器。需要长期同步时，导出 JSON 后替换 <code>data/copies.json</code> 即可。</p>
           <div class="sidebar-actions">

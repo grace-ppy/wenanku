@@ -27,6 +27,10 @@ body {
     "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
+body:not(.admin-mode) [data-admin-only] {
+  display: none !important;
+}
+
 button,
 input,
 textarea {

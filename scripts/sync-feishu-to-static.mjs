@@ -63,6 +63,24 @@ function getCheckboxField(fields, name) {
   return Boolean(value);
 }
 
+function getOptionalCheckboxField(fields, name) {
+  if (!(name in fields) || fields[name] == null) return false;
+  return getCheckboxField(fields, name);
+}
+
+function getDateField(fields, name) {
+  const value = fields[name];
+  if (value == null || value === "") return "";
+  if (typeof value === "number") return new Date(value).toISOString();
+  if (typeof value === "string") {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString();
+  }
+  if (Array.isArray(value) && value[0]) return getDateField({ value: value[0] }, "value");
+  const candidate = value.timestamp || value.value || value.text;
+  return candidate ? getDateField({ value: candidate }, "value") : "";
+}
+
 async function listRecords(token) {
   const { appToken, tableId } = getBitableConfig();
   const records = [];
@@ -96,8 +114,13 @@ function toCopyEntry(record) {
   const theme =
     getTextField(fields, "主题") ||
     getTextField(fields, "素材名称") ||
-    body.split(/\n/)[0].slice(0, 28) ||
+    body.split(/\n/)[0].slice(0, 10) ||
     "未命名主题";
+  const publishedAt =
+    getDateField(fields, "发布时间") ||
+    getDateField(fields, "更新时间") ||
+    getDateField(fields, "创建时间") ||
+    new Date().toISOString();
 
   return {
     id: record.record_id,
@@ -106,8 +129,12 @@ function toCopyEntry(record) {
     videoUrl: getTextField(fields, "视频链接") || getTextField(fields, "素材链接"),
     body,
     tags,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    private:
+      getOptionalCheckboxField(fields, "仅管理员可见") ||
+      getTextField(fields, "可见范围").includes("仅管理员") ||
+      ["否", "false", "0"].includes(getTextField(fields, "是否公开").toLowerCase()),
+    createdAt: publishedAt,
+    updatedAt: publishedAt,
     visible: getCheckboxField(fields, "是否显示"),
   };
 }
