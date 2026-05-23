@@ -129,10 +129,6 @@ function toCopyEntry(record) {
     videoUrl: getTextField(fields, "视频链接") || getTextField(fields, "素材链接"),
     body,
     tags,
-    private:
-      getOptionalCheckboxField(fields, "仅管理员可见") ||
-      getTextField(fields, "可见范围").includes("仅管理员") ||
-      ["否", "false", "0"].includes(getTextField(fields, "是否公开").toLowerCase()),
     createdAt: publishedAt,
     updatedAt: publishedAt,
     visible: getCheckboxField(fields, "是否显示"),

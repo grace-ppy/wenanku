@@ -42,7 +42,6 @@ function normalizeEntry(entry) {
     theme: entry.theme || "未命名主题",
     videoUrl: entry.videoUrl || "",
     body: entry.body || "",
-    private: Boolean(entry.private),
     tags: Array.isArray(entry.tags)
       ? entry.tags
       : String(entry.tags || "")
@@ -95,22 +94,14 @@ function createId(seed = "copy") {
 
 function getCategories() {
   const counts = new Map();
-  visibleEntries().forEach((entry) => {
+  state.entries.forEach((entry) => {
     counts.set(entry.category, (counts.get(entry.category) || 0) + 1);
   });
   return [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0], "zh-Hans-CN"));
 }
 
 function getAllTags() {
-  return new Set(visibleEntries().flatMap((entry) => entry.tags));
-}
-
-function canViewEntry(entry) {
-  return state.adminMode || !entry.private;
-}
-
-function visibleEntries() {
-  return state.entries.filter(canViewEntry);
+  return new Set(state.entries.flatMap((entry) => entry.tags));
 }
 
 function render() {
@@ -122,13 +113,13 @@ function render() {
 }
 
 function renderStats() {
-  els.totalCount.textContent = visibleEntries().length;
+  els.totalCount.textContent = state.entries.length;
   els.categoryCount.textContent = getCategories().length;
   els.tagCount.textContent = getAllTags().size;
 }
 
 function renderCategories() {
-  const categories = [["全部", visibleEntries().length], ...getCategories()];
+  const categories = [["全部", state.entries.length], ...getCategories()];
   els.categoryList.innerHTML = categories
     .map(([name, count]) => {
       const active = state.activeCategory === name ? " active" : "";
@@ -148,7 +139,7 @@ function renderCategoryOptions() {
 
 function filteredEntries() {
   const keyword = state.search.trim().toLowerCase();
-  return visibleEntries()
+  return state.entries
     .filter((entry) => state.activeCategory === "全部" || entry.category === state.activeCategory)
     .filter((entry) => {
       if (!keyword) return true;
@@ -204,7 +195,7 @@ function renderCard(entry) {
 
 function renderDetail() {
   const id = state.detailId || getHashId();
-  const entry = state.entries.find((item) => item.id === id && canViewEntry(item));
+  const entry = state.entries.find((item) => item.id === id);
   state.detailId = entry ? id : null;
 
   if (!entry) {
