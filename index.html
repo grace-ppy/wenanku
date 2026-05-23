@@ -82,7 +82,7 @@
           <div class="parser-grid">
             <label class="raw-input">
               <span>完整文本</span>
-              <textarea id="rawTextInput" placeholder="主题：&#10;视频链接：&#10;文案：&#10;标签："></textarea>
+              <textarea id="rawTextInput" placeholder="主题：&#10;分类：&#10;发布时间：&#10;是否已录制：否&#10;视频链接：&#10;文案：&#10;标签："></textarea>
             </label>
             <form class="entry-form" id="entryForm">
               <label>
@@ -93,6 +93,17 @@
                 <span>分类</span>
                 <input id="categoryInput" name="category" list="categoryOptions" placeholder="可新建分类" required />
                 <datalist id="categoryOptions"></datalist>
+              </label>
+              <label>
+                <span>是否已录制</span>
+                <select id="recordedInput" name="recorded">
+                  <option value="false" selected>否，未录制</option>
+                  <option value="true">是，已录制</option>
+                </select>
+              </label>
+              <label>
+                <span>发布时间</span>
+                <input id="publishDateInput" name="publishedAt" type="date" />
               </label>
               <label>
                 <span>视频链接</span>
@@ -120,7 +131,7 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="./config.js?v=20260523-2046"></script>
-    <script src="./script.js?v=20260523-2046" type="module"></script>
+    <script src="./config.js?v=20260523-2110"></script>
+    <script src="./script.js?v=20260523-2110" type="module"></script>
   </body>
 </html>

@@ -30,6 +30,8 @@ const els = {
   rawTextInput: document.querySelector("#rawTextInput"),
   themeInput: document.querySelector("#themeInput"),
   categoryInput: document.querySelector("#categoryInput"),
+  recordedInput: document.querySelector("#recordedInput"),
+  publishDateInput: document.querySelector("#publishDateInput"),
   videoUrlInput: document.querySelector("#videoUrlInput"),
   bodyInput: document.querySelector("#bodyInput"),
   tagsInput: document.querySelector("#tagsInput"),
@@ -38,11 +40,14 @@ const els = {
 function normalizeEntry(entry) {
   const body = entry.body || "";
   const theme = entry.theme || createThemeFromBody(body);
+  const publishedAt = entry.publishedAt || entry.updatedAt || entry.createdAt || new Date().toISOString();
 
   return {
-    id: entry.id || createId(entry.theme),
+    id: entry.id || createId(theme),
     category: entry.category || "未分类",
     theme,
+    recorded: normalizeRecorded(entry.recorded),
+    publishedAt,
     videoUrl: entry.videoUrl || "",
     body,
     tags: Array.isArray(entry.tags)
@@ -51,8 +56,8 @@ function normalizeEntry(entry) {
           .split(/[，,]/)
           .map((tag) => tag.trim())
           .filter(Boolean),
-    createdAt: entry.createdAt || new Date().toISOString(),
-    updatedAt: entry.updatedAt || new Date().toISOString(),
+    createdAt: entry.createdAt || publishedAt,
+    updatedAt: entry.updatedAt || publishedAt,
   };
 }
 
@@ -112,6 +117,24 @@ function createThemeFromBody(body) {
   );
 }
 
+function normalizeRecorded(value) {
+  if (value == null || value === "") return true;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  const text = String(value).trim().toLowerCase();
+  return !["false", "0", "否", "未录制", "未", "no", "n"].includes(text);
+}
+
+function toDateInputValue(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
+}
+
+function fromDateInputValue(value) {
+  return value ? new Date(`${value}T00:00:00`).toISOString() : new Date().toISOString();
+}
+
 function getCategories() {
   const counts = new Map();
   state.entries.forEach((entry) => {
@@ -166,6 +189,7 @@ function filteredEntries() {
       const haystack = [
         entry.theme,
         entry.category,
+        entry.recorded ? "已录制" : "未录制",
         entry.body,
         entry.tags.join(" "),
       ]
@@ -173,7 +197,11 @@ function filteredEntries() {
         .toLowerCase();
       return haystack.includes(keyword);
     })
-    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    .sort((a, b) => {
+      const recordedOrder = Number(a.recorded) - Number(b.recorded);
+      if (recordedOrder !== 0) return recordedOrder;
+      return new Date(b.publishedAt) - new Date(a.publishedAt);
+    });
 }
 
 function renderList() {
@@ -196,7 +224,8 @@ function renderCard(entry) {
         <h3>${escapeHtml(entry.theme)}</h3>
         <div class="meta">
           <span class="category-chip">${escapeHtml(entry.category)}</span>
-          <span>${formatDate(entry.updatedAt)}</span>
+          <span class="status-chip ${entry.recorded ? "done" : "pending"}">${entry.recorded ? "已录制" : "未录制"}</span>
+          <span>发布时间：${formatDate(entry.publishedAt)}</span>
           ${renderVideoLink(entry.videoUrl, "视频链接")}
         </div>
       </div>
@@ -231,7 +260,8 @@ function renderDetail() {
       <h3>${escapeHtml(entry.theme)}</h3>
       <div class="meta">
         <span class="category-chip">${escapeHtml(entry.category)}</span>
-        <span>${formatDate(entry.updatedAt)}</span>
+        <span class="status-chip ${entry.recorded ? "done" : "pending"}">${entry.recorded ? "已录制" : "未录制"}</span>
+        <span>发布时间：${formatDate(entry.publishedAt)}</span>
       </div>
     </div>
     <div class="detail-actions">
@@ -275,6 +305,8 @@ function parseRawText(raw) {
   const labels = [
     ["theme", ["主题", "标题"]],
     ["category", ["分类", "目录"]],
+    ["recorded", ["是否已录制", "已录制", "录制状态"]],
+    ["publishedAt", ["发布时间", "发布日", "时间"]],
     ["videoUrl", ["视频链接", "链接", "原视频"]],
     ["body", ["文案", "正文", "内容"]],
     ["tags", ["标签", "关键词"]],
@@ -318,6 +350,8 @@ function parseRawText(raw) {
 function fillForm(parsed) {
   els.themeInput.value = parsed.theme || els.themeInput.value;
   els.categoryInput.value = parsed.category || els.categoryInput.value || "未分类";
+  if (parsed.recorded) els.recordedInput.value = normalizeRecorded(parsed.recorded) ? "true" : "false";
+  if (parsed.publishedAt) els.publishDateInput.value = toDateInputValue(parsed.publishedAt);
   els.videoUrlInput.value = parsed.videoUrl || els.videoUrlInput.value;
   els.bodyInput.value = parsed.body || els.bodyInput.value;
   els.tagsInput.value = parsed.tags || els.tagsInput.value;
@@ -328,6 +362,8 @@ function entryToText(entry, type = "full") {
   if (type === "body") return entry.body || "";
   return [
     `主题：${entry.theme}`,
+    `是否已录制：${entry.recorded ? "是" : "否"}`,
+    `发布时间：${formatDate(entry.publishedAt)}`,
     entry.videoUrl ? `视频链接：${entry.videoUrl}` : "",
     `文案：${entry.body}`,
     entry.tags.length ? `标签：${entry.tags.join("，")}` : "",
@@ -378,6 +414,8 @@ function openCreatePanel() {
   els.submitButton.textContent = "保存文案";
   els.form.reset();
   els.rawTextInput.value = "";
+  els.recordedInput.value = "false";
+  els.publishDateInput.value = toDateInputValue(new Date().toISOString());
   els.entryPanel.hidden = false;
   els.rawTextInput.focus();
 }
@@ -397,6 +435,8 @@ function openEditPanel(id) {
   els.rawTextInput.value = "";
   els.themeInput.value = entry.theme;
   els.categoryInput.value = entry.category;
+  els.recordedInput.value = entry.recorded ? "true" : "false";
+  els.publishDateInput.value = toDateInputValue(entry.publishedAt);
   els.videoUrlInput.value = entry.videoUrl;
   els.bodyInput.value = entry.body;
   els.tagsInput.value = entry.tags.join("，");
@@ -411,6 +451,8 @@ function closeEntryPanel() {
   els.submitButton.textContent = "保存文案";
   els.form.reset();
   els.rawTextInput.value = "";
+  els.recordedInput.value = "false";
+  els.publishDateInput.value = "";
   els.entryPanel.hidden = true;
 }
 
@@ -511,6 +553,8 @@ els.form.addEventListener("submit", (event) => {
     id: state.editingId || createId(els.themeInput.value),
     theme: els.themeInput.value.trim(),
     category: els.categoryInput.value.trim(),
+    recorded: els.recordedInput.value === "true",
+    publishedAt: fromDateInputValue(els.publishDateInput.value),
     videoUrl: els.videoUrlInput.value.trim(),
     body: els.bodyInput.value.trim(),
     tags: els.tagsInput.value,
@@ -524,7 +568,7 @@ els.form.addEventListener("submit", (event) => {
       ...draft,
       id: state.entries[index].id,
       createdAt: state.entries[index].createdAt,
-      updatedAt: new Date().toISOString(),
+      updatedAt: draft.publishedAt,
     };
   } else {
     state.entries.unshift(draft);

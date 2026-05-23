@@ -48,12 +48,26 @@ function getCheckboxField(fields, name) {
   return Boolean(value);
 }
 
+function getBooleanLikeField(fields, names, defaultValue = true) {
+  const negativeValues = new Set(["false", "0", "否", "未", "未录制", "no", "n", "隐藏"]);
+  for (const name of names) {
+    if (!(name in fields) || fields[name] == null) continue;
+    const value = fields[name];
+    if (typeof value === "boolean") return value;
+    if (typeof value === "number") return value !== 0;
+    const text = getTextField(fields, name).trim().toLowerCase();
+    if (!text) continue;
+    return !negativeValues.has(text);
+  }
+  return defaultValue;
+}
+
 function getDateField(fields, name) {
   const value = fields[name];
-  if (!value) return new Date().toISOString();
+  if (!value) return "";
   if (typeof value === "number") return new Date(value).toISOString();
   const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString();
 }
 
 async function getTenantAccessToken() {
@@ -102,15 +116,29 @@ function toCopyEntry(record) {
     .map((tag) => tag.trim())
     .filter(Boolean);
 
+  const body = getTextField(fields, "文案") || getTextField(fields, "备注");
+  const theme =
+    getTextField(fields, "主题") ||
+    getTextField(fields, "素材名称") ||
+    body.split(/\n/)[0].slice(0, 10) ||
+    "未命名主题";
+  const publishedAt =
+    getDateField(fields, "发布时间") ||
+    getDateField(fields, "更新时间") ||
+    getDateField(fields, "创建时间") ||
+    new Date().toISOString();
+
   return {
     id: record.record_id,
     category: getTextField(fields, "分类") || "未分类",
-    theme: getTextField(fields, "主题") || "未命名主题",
-    videoUrl: getTextField(fields, "视频链接"),
-    body: getTextField(fields, "文案"),
+    theme,
+    recorded: getBooleanLikeField(fields, ["是否已录制", "已录制", "录制状态"], true),
+    publishedAt,
+    videoUrl: getTextField(fields, "视频链接") || getTextField(fields, "素材链接"),
+    body,
     tags,
-    createdAt: getDateField(fields, "更新时间"),
-    updatedAt: getDateField(fields, "更新时间"),
+    createdAt: publishedAt,
+    updatedAt: publishedAt,
     visible: getCheckboxField(fields, "是否显示"),
   };
 }

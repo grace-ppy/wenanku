@@ -68,6 +68,20 @@ function getOptionalCheckboxField(fields, name) {
   return getCheckboxField(fields, name);
 }
 
+function getBooleanLikeField(fields, names, defaultValue = true) {
+  const negativeValues = new Set(["false", "0", "否", "未", "未录制", "no", "n", "隐藏"]);
+  for (const name of names) {
+    if (!(name in fields) || fields[name] == null) continue;
+    const value = fields[name];
+    if (typeof value === "boolean") return value;
+    if (typeof value === "number") return value !== 0;
+    const text = getTextField(fields, name).trim().toLowerCase();
+    if (!text) continue;
+    return !negativeValues.has(text);
+  }
+  return defaultValue;
+}
+
 function getDateField(fields, name) {
   const value = fields[name];
   if (value == null || value === "") return "";
@@ -126,6 +140,8 @@ function toCopyEntry(record) {
     id: record.record_id,
     category: getTextField(fields, "分类") || "未分类",
     theme,
+    recorded: getBooleanLikeField(fields, ["是否已录制", "已录制", "录制状态"], true),
+    publishedAt,
     videoUrl: getTextField(fields, "视频链接") || getTextField(fields, "素材链接"),
     body,
     tags,
