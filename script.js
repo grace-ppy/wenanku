@@ -36,12 +36,15 @@ const els = {
 };
 
 function normalizeEntry(entry) {
+  const body = entry.body || "";
+  const theme = entry.theme || createThemeFromBody(body);
+
   return {
     id: entry.id || createId(entry.theme),
     category: entry.category || "未分类",
-    theme: entry.theme || "未命名主题",
+    theme,
     videoUrl: entry.videoUrl || "",
-    body: entry.body || "",
+    body,
     tags: Array.isArray(entry.tags)
       ? entry.tags
       : String(entry.tags || "")
@@ -67,15 +70,24 @@ async function loadEntries() {
     }
   }
 
+  try {
+    const response = await fetch(`${DATA_URL}?v=${Date.now()}`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Static data failed: ${response.status}`);
+    const data = await response.json();
+    state.entries = data.map(normalizeEntry);
+    return;
+  } catch (error) {
+    console.warn(error);
+  }
+
   const local = localStorage.getItem(STORAGE_KEY);
   if (local) {
     state.entries = JSON.parse(local).map(normalizeEntry);
+    showToast("线上数据读取失败，已显示本地数据");
     return;
   }
 
-  const response = await fetch(DATA_URL);
-  const data = await response.json();
-  state.entries = data.map(normalizeEntry);
+  throw new Error("No copy data available");
 }
 
 function saveLocal() {
@@ -90,6 +102,14 @@ function createId(seed = "copy") {
     .slice(0, 42);
   const stamp = new Date().toISOString().replace(/\D/g, "").slice(0, 14);
   return `${stamp}-${slug || "copy"}`;
+}
+
+function createThemeFromBody(body) {
+  return (
+    String(body || "")
+      .replace(/\s+/g, "")
+      .slice(0, 10) || "未命名主题"
+  );
 }
 
 function getCategories() {
