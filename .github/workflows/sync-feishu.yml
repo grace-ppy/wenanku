@@ -30,3 +30,5 @@ jobs:
         with:
           commit_message: "Sync Feishu copy data"
           file_pattern: data/copies.json
+      - name: Publish synced data to GitHub Pages branch
+        run: git push origin HEAD:gh-pages
